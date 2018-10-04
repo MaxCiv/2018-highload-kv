@@ -1,9 +1,22 @@
-# Ignore everything
-*
+# User-specific stuff:
+.idea
+*.iml
 
-# But not Java files...
-!.gitignore
-!*.java
+# IntelliJ
+out/
+target/
 
-# ...even if they are in subdirectories
-!*/
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files #
+*.jar
+
+## Gradle template
+.gradle/
+.gradletasknamecache
+!gradle-wrapper.jar
+build/

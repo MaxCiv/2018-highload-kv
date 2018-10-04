@@ -18,7 +18,7 @@ dependencies {
     testCompile("org.junit.jupiter:junit-jupiter-api:5.3.1")
 
     // HTTP client for unit tests
-    testCompile("org.apache.httpcomponents:fluent-hc:4.5.3")
+    compile("org.apache.httpcomponents:fluent-hc:4.5.3")
 
     // One NIO
     compile("ru.odnoklassniki:one-nio:1.0.2")

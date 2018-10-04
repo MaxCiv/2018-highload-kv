@@ -21,10 +21,10 @@ dependencies {
     testCompile("org.apache.httpcomponents:fluent-hc:4.5.3")
 
     // One NIO
-    testCompile("ru.odnoklassniki:one-nio:1.0.2")
+    compile("ru.odnoklassniki:one-nio:1.0.2")
 
     // Nitrite DB
-    testCompile("org.dizitart:nitrite:3.1.0")
+    compile("org.dizitart:nitrite:3.1.0")
 }
 
 tasks {

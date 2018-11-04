@@ -9,8 +9,8 @@ import java.util.NoSuchElementException;
 
 public class StorageService {
 
-    public static final String ENTITY_TIMESTAMP_HEADER = "X-Timestamp: ";
-    public static final String ENTITY_REMOVED_HEADER = "X-Removed: ";
+    public static final String ENTITY_TIMESTAMP_HEADER = "Timestamp: ";
+    public static final String ENTITY_REMOVED_HEADER = "Removed: ";
 
     private final KVDaoImpl dao;
 
@@ -46,9 +46,7 @@ public class StorageService {
     }
 
     public Response removeObject(String key) {
-        Response response;
         dao.setRemoved(key.getBytes(Charset.forName("UTF-8")));
-        response = new Response(Response.ACCEPTED, Response.EMPTY);
-        return response;
+        return new Response(Response.ACCEPTED, Response.EMPTY);
     }
 }

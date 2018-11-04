@@ -60,9 +60,12 @@ public class KVDaoImpl implements KVDao {
     }
 
     public void setRemoved(@NotNull byte[] key) {
-        KVObject keyValueObject = getObject(key);
-        keyValueObject.setRemoved(true);
-        repository.update(eq("keyHash", keyValueObject.getKeyHex()), keyValueObject, false);
-
+        try {
+            KVObject keyValueObject = getObject(key);
+            keyValueObject.setRemoved(true);
+            repository.update(eq("keyHex", keyValueObject.getKeyHex()), keyValueObject, false);
+        } catch (Exception e) {
+            return;
+        }
     }
 }

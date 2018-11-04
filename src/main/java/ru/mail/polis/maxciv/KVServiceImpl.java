@@ -44,11 +44,11 @@ public class KVServiceImpl extends HttpServer implements KVService {
             case Request.METHOD_GET:
                 return clusterService.getObject(id, replicas, isReplication);
             case Request.METHOD_PUT:
-                return clusterService.putObject(id, request.getBody(), request, replicas, isReplication);
+                return clusterService.putObject(id, request.getBody(), replicas, isReplication);
             case Request.METHOD_DELETE:
                 return clusterService.removeObject(id, replicas, isReplication);
             default:
-                return new Response(Response.BAD_REQUEST, Response.EMPTY);
+                return new Response(Response.METHOD_NOT_ALLOWED, Response.EMPTY);
         }
     }
 

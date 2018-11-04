@@ -15,7 +15,7 @@ public class KVObject {
     private byte[] key;
     private byte[] value;
     private Timestamp timestamp;
-    private Boolean isRemoved;
+    private boolean isRemoved = false;
 
     public KVObject() {
     }
@@ -43,11 +43,11 @@ public class KVObject {
         return timestamp;
     }
 
-    public Boolean getRemoved() {
+    public boolean getRemoved() {
         return isRemoved;
     }
 
-    public void setRemoved(Boolean removed) {
+    public void setRemoved(boolean removed) {
         isRemoved = removed;
     }
 }

@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 
 public class ClusterService {
 
-    public static final String REPLICATION_HEADER = "X-Replication: ";
+    public static final String REPLICATION_HEADER = "Replication: ";
+
     private static final String REPLICATION_REQUEST_URL = "/v0/entity?id=";
     private static final int STATUS_OK = 200;
     private static final int STATUS_CREATED = 201;
@@ -34,11 +35,13 @@ public class ClusterService {
 
     public Response getObject(String key, String replicasString, boolean isReplication) {
         Replicas replicas = getReplicasFromString(replicasString);
-        if (replicas == null)
+        if (replicas == null) {
             return new Response(Response.BAD_REQUEST, Response.EMPTY);
+        }
 
-        if (isReplication)
+        if (isReplication) {
             return storageService.getObject(key);
+        }
 
         int ackCount = 0;
         boolean removedFlag = false;
@@ -63,9 +66,9 @@ public class ClusterService {
                         String timestamp = response.getHeader(StorageService.ENTITY_TIMESTAMP_HEADER);
                         Long objectTimestamp = new Long(timestamp);
 
-                        if (response.getHeader(StorageService.ENTITY_REMOVED_HEADER) != null)
+                        if (response.getHeader(StorageService.ENTITY_REMOVED_HEADER) != null) {
                             removedFlag = true;
-                        else if (objectTimestamp > mostFreshTimestamp) {
+                        } else if (objectTimestamp > mostFreshTimestamp) {
                             mostFreshTimestamp = objectTimestamp;
                             resultObject = response.getBody();
                         }
@@ -73,9 +76,9 @@ public class ClusterService {
                 }
             }
             if (ackCount >= replicas.getAck()) {
-                if (removedFlag || resultObject == null)
+                if (removedFlag || resultObject == null) {
                     return new Response(Response.NOT_FOUND, Response.EMPTY);
-                else {
+                } else {
                     return new Response(Response.OK, resultObject);
                 }
             }
@@ -83,7 +86,7 @@ public class ClusterService {
         return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
     }
 
-    public Response putObject(String key, byte[] value, Request request, String replicasString, boolean isReplication) {
+    public Response putObject(String key, byte[] value, String replicasString, boolean isReplication) {
         Replicas replicasObj = getReplicasFromString(replicasString);
 
         if (replicasObj == null)
@@ -98,10 +101,11 @@ public class ClusterService {
         for (int i = 0; i < replicasObj.getFrom(); i++) {
             Response response;
 
-            if (sortedNodes.get(i).getPort() == currentPort)
+            if (sortedNodes.get(i).getPort() == currentPort) {
                 response = storageService.putObject(key, value);
-            else
+            } else {
                 response = sendReplicationRequest(sortedNodes.get(i), Request.METHOD_PUT, key, value);
+            }
 
             if (response != null && response.getStatus() == STATUS_CREATED) {
                 ackCount++;
@@ -128,10 +132,11 @@ public class ClusterService {
         List<Node> sortedNodes = getNodesSortedByDistances(keyHash);
         for (int i = 0; i < replicasObj.getFrom(); i++) {
             Response response;
-            if (sortedNodes.get(i).getPort() == currentPort)
+            if (sortedNodes.get(i).getPort() == currentPort) {
                 response = storageService.removeObject(key);
-            else
+            } else {
                 response = sendReplicationRequest(sortedNodes.get(i), Request.METHOD_DELETE, key, null);
+            }
 
             if (response != null && response.getStatus() == STATUS_ACCEPTED) {
                 ackCount++;
@@ -140,7 +145,6 @@ public class ClusterService {
         if (ackCount >= replicasObj.getAck()) {
             return new Response(Response.ACCEPTED, Response.EMPTY);
         }
-
         return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
     }
 
@@ -166,9 +170,9 @@ public class ClusterService {
         if (replicas == null)
             return Replicas.getDefault(topology.size());
 
-        String[] tmp = replicas.split("/");
-        int ack = Integer.valueOf(tmp[0]);
-        int from = Integer.valueOf(tmp[1]);
+        String[] split = replicas.split("/");
+        int ack = Integer.valueOf(split[0]);
+        int from = Integer.valueOf(split[1]);
 
         if (ack > 0 && ack <= from)
             return new Replicas(ack, from);

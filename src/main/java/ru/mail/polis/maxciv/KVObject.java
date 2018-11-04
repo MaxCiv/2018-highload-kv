@@ -20,14 +20,14 @@ public class KVObject {
     public KVObject() {
     }
 
-    public KVObject(String keyHex, byte[] key, byte[] value, Timestamp timestamp) {
+    KVObject(String keyHex, byte[] key, byte[] value, Timestamp timestamp) {
         this.keyHex = keyHex;
         this.key = key;
         this.value = value;
         this.timestamp = timestamp;
     }
 
-    public String getKeyHex() {
+    String getKeyHex() {
         return keyHex;
     }
 
@@ -39,15 +39,15 @@ public class KVObject {
         return value;
     }
 
-    public Timestamp getTimestamp() {
+    Timestamp getTimestamp() {
         return timestamp;
     }
 
-    public boolean getRemoved() {
+    boolean getRemoved() {
         return isRemoved;
     }
 
-    public void setRemoved(boolean removed) {
+    void setRemoved(boolean removed) {
         isRemoved = removed;
     }
 }

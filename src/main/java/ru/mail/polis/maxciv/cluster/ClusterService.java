@@ -157,7 +157,6 @@ public class ClusterService {
             request.addHeader("Content-Length: " + body.length);
             request.setBody(body);
         }
-
         try {
             return clusterNode.getHttpClient().invoke(request);
         } catch (Exception e) {

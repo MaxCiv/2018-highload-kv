@@ -53,13 +53,13 @@ public class KVDaoImpl implements KVDao {
     }
 
     @NotNull
-    public KVObject getObject(@NotNull byte[] key) throws NoSuchElementException {
+    KVObject getObject(@NotNull byte[] key) throws NoSuchElementException {
         KVObject keyValueObject = repository.find(eq("keyHex", bytesToMd5Hex(key))).firstOrDefault();
         if (keyValueObject == null) throw new NoSuchElementException();
         return keyValueObject;
     }
 
-    public void setRemoved(@NotNull byte[] key) {
+    void setRemoved(@NotNull byte[] key) {
         try {
             KVObject keyValueObject = getObject(key);
             keyValueObject.setRemoved(true);

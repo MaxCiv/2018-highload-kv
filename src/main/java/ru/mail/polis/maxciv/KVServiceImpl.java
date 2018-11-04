@@ -1,22 +1,27 @@
 package ru.mail.polis.maxciv;
 
-import one.nio.http.*;
+import one.nio.http.HttpServer;
+import one.nio.http.HttpSession;
+import one.nio.http.Param;
+import one.nio.http.Path;
+import one.nio.http.Request;
+import one.nio.http.Response;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.KVService;
+import ru.mail.polis.maxciv.cluster.ClusterService;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static ru.mail.polis.maxciv.util.KVUtils.createServerConfig;
 
 public class KVServiceImpl extends HttpServer implements KVService {
 
-    private final KVDao dao;
+    private final ClusterService clusterService;
 
-    public KVServiceImpl(int port, KVDao dao) throws IOException {
+    public KVServiceImpl(int port, KVDao dao, Set<String> topology) throws IOException {
         super(createServerConfig(port));
-        this.dao = dao;
+        this.clusterService = new ClusterService(port, dao, topology);
     }
 
     @Path("/v0/status")
@@ -25,18 +30,23 @@ public class KVServiceImpl extends HttpServer implements KVService {
     }
 
     @Path("/v0/entity")
-    public Response handleEntity(Request request, @Param(value = "id") String id) {
-        if (id == null || id.isEmpty()) {
+    public Response handleEntity(
+            Request request,
+            @Param(value = "id") String id,
+            @Param(value = "replicas") String replicas
+    ) {
+        if (id == null || id.isEmpty() || (replicas != null && replicas.isEmpty()))
             return new Response(Response.BAD_REQUEST, Response.EMPTY);
-        }
+
+        boolean isReplication = request.getHeader(ClusterService.REPLICATION_HEADER) != null;
 
         switch (request.getMethod()) {
             case Request.METHOD_GET:
-                return getEntity(id);
+                return clusterService.getObject(id, replicas, isReplication);
             case Request.METHOD_PUT:
-                return putEntity(id, request);
+                return clusterService.putObject(id, request.getBody(), request, replicas, isReplication);
             case Request.METHOD_DELETE:
-                return deleteEntity(id);
+                return clusterService.removeObject(id, replicas, isReplication);
             default:
                 return new Response(Response.BAD_REQUEST, Response.EMPTY);
         }
@@ -44,36 +54,7 @@ public class KVServiceImpl extends HttpServer implements KVService {
 
     @Override
     public void handleDefault(Request request, HttpSession session) throws IOException {
-        Response response = new Response(Response.NOT_FOUND, Response.EMPTY);
+        Response response = new Response(Response.BAD_REQUEST, Response.EMPTY);
         session.sendResponse(response);
-    }
-
-    private Response getEntity(String id) {
-        try {
-            byte[] bytes = dao.get(id.getBytes(Charset.forName("UTF-8")));
-            return Response.ok(bytes);
-        } catch (NoSuchElementException e) {
-            return new Response(Response.NOT_FOUND, Response.EMPTY);
-        } catch (Exception e) {
-            return new Response(Response.INTERNAL_ERROR, Response.EMPTY);
-        }
-    }
-
-    private Response putEntity(String id, Request request) {
-        try {
-            dao.upsert(id.getBytes(Charset.forName("UTF-8")), request.getBody());
-            return new Response(Response.CREATED, Response.EMPTY);
-        } catch (Exception e) {
-            return new Response(Response.INTERNAL_ERROR, Response.EMPTY);
-        }
-    }
-
-    private Response deleteEntity(String id) {
-        try {
-            dao.remove(id.getBytes(Charset.forName("UTF-8")));
-            return new Response(Response.ACCEPTED, Response.EMPTY);
-        } catch (Exception e) {
-            return new Response(Response.INTERNAL_ERROR, Response.EMPTY);
-        }
     }
 }

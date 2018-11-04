@@ -9,7 +9,7 @@ public final class KVUtils {
     private KVUtils() {
     }
 
-    public static String bytesToHex(byte[] bytes) {
+    public static String bytesToMd5Hex(byte[] bytes) {
         return DigestUtils.md5Hex(bytes);
     }
 
@@ -20,5 +20,13 @@ public final class KVUtils {
         HttpServerConfig config = new HttpServerConfig();
         config.acceptors = new AcceptorConfig[]{ac};
         return config;
+    }
+
+    public static int getMd5StringsDistance(String a, String b) {
+        int distance = 0;
+        for (int i = 0; i < 32; i++) {
+            distance += a.charAt(i) == b.charAt(i) ? 0 : 1;
+        }
+        return distance;
     }
 }

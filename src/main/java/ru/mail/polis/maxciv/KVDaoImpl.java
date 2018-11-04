@@ -7,46 +7,62 @@ import ru.mail.polis.KVDao;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
 import static org.dizitart.no2.objects.filters.ObjectFilters.eq;
-import static ru.mail.polis.maxciv.util.KVUtils.bytesToHex;
+import static ru.mail.polis.maxciv.util.KVUtils.bytesToMd5Hex;
 
 public class KVDaoImpl implements KVDao {
 
-    private ObjectRepository<KeyValueObject> repository;
-    private Nitrite db;
+    private final ObjectRepository<KVObject> repository;
+    private final Nitrite db;
 
     public KVDaoImpl(@NotNull File baseDir) {
         db = Nitrite.builder()
                 .filePath(baseDir.getPath() + File.separator + "key_value.db")
                 .openOrCreate();
 
-        repository = db.getRepository(KeyValueObject.class);
+        repository = db.getRepository(KVObject.class);
     }
 
     @NotNull
     @Override
     public byte[] get(@NotNull byte[] key) throws NoSuchElementException, IOException {
-        KeyValueObject keyValueObject = repository.find(eq("keyHex", bytesToHex(key))).firstOrDefault();
+        KVObject keyValueObject = repository.find(eq("keyHex", bytesToMd5Hex(key))).firstOrDefault();
         if (keyValueObject == null) throw new NoSuchElementException();
         return keyValueObject.getValue();
     }
 
     @Override
     public void upsert(@NotNull byte[] key, @NotNull byte[] value) throws IOException {
-        String keyHex = bytesToHex(key);
-        repository.update(eq("keyHex", keyHex), new KeyValueObject(keyHex, key, value), true);
+        String keyHex = bytesToMd5Hex(key);
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        repository.update(eq("keyHex", keyHex), new KVObject(keyHex, key, value, timestamp), true);
     }
 
     @Override
     public void remove(@NotNull byte[] key) throws IOException {
-        repository.remove(eq("keyHex", bytesToHex(key)));
+        repository.remove(eq("keyHex", bytesToMd5Hex(key)));
     }
 
     @Override
     public void close() throws IOException {
         repository.close();
         db.close();
+    }
+
+    @NotNull
+    public KVObject getObject(@NotNull byte[] key) throws NoSuchElementException {
+        KVObject keyValueObject = repository.find(eq("keyHex", bytesToMd5Hex(key))).firstOrDefault();
+        if (keyValueObject == null) throw new NoSuchElementException();
+        return keyValueObject;
+    }
+
+    public void setRemoved(@NotNull byte[] key) {
+        KVObject keyValueObject = getObject(key);
+        keyValueObject.setRemoved(true);
+        repository.update(eq("keyHash", keyValueObject.getKeyHex()), keyValueObject, false);
+
     }
 }

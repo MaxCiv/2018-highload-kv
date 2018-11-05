@@ -64,7 +64,7 @@ public class KVDaoImpl implements KVDao {
             KVObject keyValueObject = getObject(key);
             keyValueObject.setRemoved(true);
             repository.update(eq("keyHex", keyValueObject.getKeyHex()), keyValueObject, false);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             return;
         }
     }

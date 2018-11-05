@@ -33,20 +33,20 @@ public class KVServiceImpl extends HttpServer implements KVService {
     public Response handleEntity(
             Request request,
             @Param(value = "id") String id,
-            @Param(value = "replicas") String replicas
+            @Param(value = "replicas") String replicasString
     ) {
-        if (id == null || id.isEmpty() || (replicas != null && replicas.isEmpty()))
+        if (id == null || id.isEmpty() || (replicasString != null && replicasString.isEmpty()))
             return new Response(Response.BAD_REQUEST, Response.EMPTY);
 
         boolean isReplication = request.getHeader(ClusterService.REPLICATION_HEADER) != null;
 
         switch (request.getMethod()) {
             case Request.METHOD_GET:
-                return clusterService.getObject(id, replicas, isReplication);
+                return clusterService.getObject(id, replicasString, isReplication);
             case Request.METHOD_PUT:
-                return clusterService.putObject(id, request.getBody(), replicas, isReplication);
+                return clusterService.putObject(id, request.getBody(), replicasString, isReplication);
             case Request.METHOD_DELETE:
-                return clusterService.removeObject(id, replicas, isReplication);
+                return clusterService.removeObject(id, replicasString, isReplication);
             default:
                 return new Response(Response.METHOD_NOT_ALLOWED, Response.EMPTY);
         }

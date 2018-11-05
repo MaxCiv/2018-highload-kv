@@ -45,10 +45,9 @@ public class ClusterService {
 
         int ackCount = 0;
         boolean removedFlag = false;
-        byte[] resultObject = null;
-        long mostFreshTimestamp = 0;
-        String keyHash = KVUtils.bytesToMd5Hex(key.getBytes());
-        List<Node> sortedNodes = getNodesSortedByDistances(keyHash);
+        byte[] resultValue = null;
+        long newerTimestamp = 0;
+        List<Node> sortedNodes = getNodesSortedByDistance(KVUtils.bytesToMd5Hex(key.getBytes()));
 
         for (int i = 0; i < replicas.getFrom(); i++) {
             Response response;
@@ -68,18 +67,18 @@ public class ClusterService {
 
                         if (response.getHeader(StorageService.ENTITY_REMOVED_HEADER) != null) {
                             removedFlag = true;
-                        } else if (objectTimestamp > mostFreshTimestamp) {
-                            mostFreshTimestamp = objectTimestamp;
-                            resultObject = response.getBody();
+                        } else if (objectTimestamp > newerTimestamp) {
+                            newerTimestamp = objectTimestamp;
+                            resultValue = response.getBody();
                         }
                     }
                 }
             }
             if (ackCount >= replicas.getAck()) {
-                if (removedFlag || resultObject == null) {
+                if (removedFlag || resultValue == null) {
                     return new Response(Response.NOT_FOUND, Response.EMPTY);
                 } else {
-                    return new Response(Response.OK, resultObject);
+                    return new Response(Response.OK, resultValue);
                 }
             }
         }
@@ -87,18 +86,18 @@ public class ClusterService {
     }
 
     public Response putObject(String key, byte[] value, String replicasString, boolean isReplication) {
-        Replicas replicasObj = getReplicasFromString(replicasString);
+        Replicas replicas = getReplicasFromString(replicasString);
 
-        if (replicasObj == null)
+        if (replicas == null)
             return new Response(Response.BAD_REQUEST, Response.EMPTY);
 
         if (isReplication)
             return storageService.putObject(key, value);
 
         int ackCount = 0;
-        String keyHash = KVUtils.bytesToMd5Hex(key.getBytes());
-        List<Node> sortedNodes = getNodesSortedByDistances(keyHash);
-        for (int i = 0; i < replicasObj.getFrom(); i++) {
+        List<Node> sortedNodes = getNodesSortedByDistance(KVUtils.bytesToMd5Hex(key.getBytes()));
+
+        for (int i = 0; i < replicas.getFrom(); i++) {
             Response response;
 
             if (sortedNodes.get(i).getPort() == currentPort) {
@@ -111,26 +110,25 @@ public class ClusterService {
                 ackCount++;
             }
         }
-        if (ackCount >= replicasObj.getAck()) {
+        if (ackCount >= replicas.getAck())
             return new Response(Response.CREATED, Response.EMPTY);
-        }
 
         return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
     }
 
     public Response removeObject(String key, String replicasString, boolean isReplication) {
-        Replicas replicasObj = getReplicasFromString(replicasString);
+        Replicas replicas = getReplicasFromString(replicasString);
 
-        if (replicasObj == null)
+        if (replicas == null)
             return new Response(Response.BAD_REQUEST, Response.EMPTY);
 
         if (isReplication)
             return storageService.removeObject(key);
 
         int ackCount = 0;
-        String keyHash = KVUtils.bytesToMd5Hex(key.getBytes());
-        List<Node> sortedNodes = getNodesSortedByDistances(keyHash);
-        for (int i = 0; i < replicasObj.getFrom(); i++) {
+        List<Node> sortedNodes = getNodesSortedByDistance(KVUtils.bytesToMd5Hex(key.getBytes()));
+
+        for (int i = 0; i < replicas.getFrom(); i++) {
             Response response;
             if (sortedNodes.get(i).getPort() == currentPort) {
                 response = storageService.removeObject(key);
@@ -142,12 +140,11 @@ public class ClusterService {
                 ackCount++;
             }
         }
-        if (ackCount >= replicasObj.getAck()) {
+        if (ackCount >= replicas.getAck())
             return new Response(Response.ACCEPTED, Response.EMPTY);
-        }
+
         return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
     }
-
 
     private Response sendReplicationRequest(Node clusterNode, int method, String id, byte[] body) {
         Request request = new Request(method, REPLICATION_REQUEST_URL + id, true);
@@ -178,7 +175,7 @@ public class ClusterService {
         return null;
     }
 
-    private List<Node> getNodesSortedByDistances(String hash) {
+    private List<Node> getNodesSortedByDistance(String hash) {
         return clusterNodes.stream()
                 .sorted(Comparator.comparingInt(node -> node.getDistance(hash)))
                 .collect(Collectors.toList());

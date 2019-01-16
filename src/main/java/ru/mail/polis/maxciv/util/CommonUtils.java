@@ -25,7 +25,7 @@ public final class CommonUtils {
 
     public static int getSha3StringsDistance(String a, String b) {
         int distance = 0;
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < 64; i++) {
             distance += a.charAt(i) == b.charAt(i) ? 0 : 1;
         }
         return distance;

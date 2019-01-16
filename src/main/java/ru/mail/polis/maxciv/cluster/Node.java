@@ -24,7 +24,7 @@ public class Node {
         return port;
     }
 
-    HttpClient getHttpClient() {
+    public HttpClient getHttpClient() {
         return httpClient;
     }
 }

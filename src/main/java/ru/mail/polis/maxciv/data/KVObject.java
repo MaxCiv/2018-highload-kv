@@ -7,7 +7,7 @@ import org.dizitart.no2.objects.Indices;
 import java.sql.Timestamp;
 
 @Indices({
-        @Index(value = "keyHex", type = IndexType.NonUnique),
+        @Index(value = "keyHex", type = IndexType.Unique),
 })
 public class KVObject {
 

@@ -7,9 +7,9 @@ import ru.mail.polis.maxciv.data.KVObject;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
 
-import static ru.mail.polis.maxciv.util.ResponceUtils.ACCEPTED;
-import static ru.mail.polis.maxciv.util.ResponceUtils.CREATED;
-import static ru.mail.polis.maxciv.util.ResponceUtils.NOT_FOUND;
+import static ru.mail.polis.maxciv.util.ResponceUtils.accepted;
+import static ru.mail.polis.maxciv.util.ResponceUtils.created;
+import static ru.mail.polis.maxciv.util.ResponceUtils.notFound;
 
 public class StorageService {
 
@@ -33,18 +33,18 @@ public class StorageService {
             if (object.getRemoved())
                 response.addHeader(ENTITY_REMOVED_HEADER + true);
         } catch (NoSuchElementException e) {
-            response = NOT_FOUND();
+            response = notFound();
         }
         return response;
     }
 
     public Response putObject(String key, byte[] value) {
         dao.upsert(key.getBytes(Charset.forName("UTF-8")), value);
-        return CREATED();
+        return created();
     }
 
-    public Response removeObject(String key) {
+    public Response deleteObject(String key) {
         dao.setRemoved(key.getBytes(Charset.forName("UTF-8")));
-        return ACCEPTED();
+        return accepted();
     }
 }

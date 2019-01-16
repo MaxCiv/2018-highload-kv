@@ -37,7 +37,11 @@ public class KVDaoImpl implements KVDao {
     public void upsert(@NotNull byte[] key, @NotNull byte[] value) {
         String keyHex = bytesToSha3Hex(key);
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        repository.update(eq("keyHex", keyHex), new KVObject(keyHex, key, value, timestamp), true);
+        try {
+            repository.update(eq("keyHex", keyHex), new KVObject(keyHex, key, value, timestamp), true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

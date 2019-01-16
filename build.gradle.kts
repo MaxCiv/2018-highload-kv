@@ -27,6 +27,9 @@ dependencies {
     // SHA-3
     compile("org.bouncycastle:bcpkix-jdk15on:1.60")
 
+    // OkHttp
+    compile("com.squareup.okhttp3:okhttp:3.12.1")
+
     // One NIO
     compile("ru.odnoklassniki:one-nio:1.0.2")
 

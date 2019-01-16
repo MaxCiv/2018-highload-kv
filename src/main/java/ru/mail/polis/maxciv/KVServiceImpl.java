@@ -1,11 +1,11 @@
 package ru.mail.polis.maxciv;
 
+import okhttp3.Response;
 import one.nio.http.HttpServer;
 import one.nio.http.HttpSession;
 import one.nio.http.Param;
 import one.nio.http.Path;
 import one.nio.http.Request;
-import one.nio.http.Response;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.KVService;
 import ru.mail.polis.maxciv.cluster.ClusterService;
@@ -16,6 +16,7 @@ import java.util.Set;
 import static ru.mail.polis.maxciv.util.CommonUtils.createServerConfig;
 import static ru.mail.polis.maxciv.util.ResponceUtils.BAD_REQUEST;
 import static ru.mail.polis.maxciv.util.ResponceUtils.METHOD_NOT_ALLOWED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.OK;
 
 public class KVServiceImpl extends HttpServer implements KVService {
 
@@ -28,7 +29,7 @@ public class KVServiceImpl extends HttpServer implements KVService {
 
     @Path("/v0/status")
     public Response handleStatus() {
-        return Response.ok("Status: OK");
+        return OK();
     }
 
     @Path("/v0/entity")
@@ -56,6 +57,6 @@ public class KVServiceImpl extends HttpServer implements KVService {
 
     @Override
     public void handleDefault(Request request, HttpSession session) throws IOException {
-        session.sendResponse(BAD_REQUEST());
+        session.sendResponse(new one.nio.http.Response(one.nio.http.Response.BAD_REQUEST));
     }
 }

@@ -1,15 +1,18 @@
 package ru.mail.polis.maxciv;
 
-import one.nio.http.Response;
+import okhttp3.Response;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.maxciv.data.KVObject;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static ru.mail.polis.maxciv.util.ResponceUtils.ACCEPTED;
 import static ru.mail.polis.maxciv.util.ResponceUtils.CREATED;
 import static ru.mail.polis.maxciv.util.ResponceUtils.NOT_FOUND;
+import static ru.mail.polis.maxciv.util.ResponceUtils.OK;
 
 public class StorageService {
 
@@ -27,11 +30,12 @@ public class StorageService {
         try {
             KVObject object = dao.getObject(key.getBytes(Charset.forName("UTF-8")));
 
-            response = Response.ok(object.getValue());
-            response.addHeader(ENTITY_TIMESTAMP_HEADER + object.getTimestamp().getTime());
-
+            Map<String, String> map = new HashMap<>();
+            map.put(ENTITY_TIMESTAMP_HEADER, String.valueOf(object.getTimestamp().getTime()));
             if (object.getRemoved())
-                response.addHeader(ENTITY_REMOVED_HEADER + true);
+                map.put(ENTITY_REMOVED_HEADER, "true");
+
+            response = OK(object.getValue(), map);
         } catch (NoSuchElementException e) {
             response = NOT_FOUND();
         }

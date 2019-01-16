@@ -1,29 +1,35 @@
 package ru.mail.polis.maxciv.cluster;
 
-import one.nio.http.Request;
-import one.nio.http.Response;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.maxciv.StorageService;
 import ru.mail.polis.maxciv.data.Replicas;
 import ru.mail.polis.maxciv.util.CommonUtils;
 
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static one.nio.http.Response.ok;
 import static ru.mail.polis.maxciv.util.ResponceUtils.ACCEPTED;
 import static ru.mail.polis.maxciv.util.ResponceUtils.BAD_REQUEST;
 import static ru.mail.polis.maxciv.util.ResponceUtils.CREATED;
 import static ru.mail.polis.maxciv.util.ResponceUtils.GATEWAY_TIMEOUT;
 import static ru.mail.polis.maxciv.util.ResponceUtils.NOT_FOUND;
+import static ru.mail.polis.maxciv.util.ResponceUtils.OK;
 import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_ACCEPTED;
 import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_CREATED;
 import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_NOT_FOUND;
 import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_OK;
 
 public class ClusterService {
+
+    public static final int METHOD_GET     = 1;
+    public static final int METHOD_PUT     = 5;
+    public static final int METHOD_DELETE  = 6;
 
     public static final String REPLICATION_HEADER = "Replication: ";
 
@@ -64,21 +70,25 @@ public class ClusterService {
             if (sortedNodes.get(i).getPort() == currentPort) {
                 response = storageService.getObject(key);
             } else {
-                response = sendReplicationRequest(sortedNodes.get(i), Request.METHOD_GET, key, null);
+                response = sendReplicationRequest(sortedNodes.get(i), METHOD_GET, key, null);
             }
 
             if (response != null) {
-                if (response.getStatus() == STATUS_OK || response.getStatus() == STATUS_NOT_FOUND) {
+                if (response.code() == STATUS_OK || response.code() == STATUS_NOT_FOUND) {
                     ackCount++;
-                    if (response.getStatus() == STATUS_OK) {
-                        String timestamp = response.getHeader(StorageService.ENTITY_TIMESTAMP_HEADER);
+                    if (response.code() == STATUS_OK) {
+                        String timestamp = response.header(StorageService.ENTITY_TIMESTAMP_HEADER);
                         Long objectTimestamp = new Long(timestamp);
 
-                        if (response.getHeader(StorageService.ENTITY_REMOVED_HEADER) != null) {
+                        if (response.header(StorageService.ENTITY_REMOVED_HEADER) != null) {
                             removedFlag = true;
                         } else if (objectTimestamp > newerTimestamp) {
                             newerTimestamp = objectTimestamp;
-                            resultValue = response.getBody();
+                            try {
+                                resultValue = response.body().bytes();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -87,7 +97,7 @@ public class ClusterService {
                 if (removedFlag || resultValue == null) {
                     return NOT_FOUND();
                 } else {
-                    return ok(resultValue);
+                    return OK(resultValue);
                 }
             }
         }
@@ -112,10 +122,10 @@ public class ClusterService {
             if (sortedNodes.get(i).getPort() == currentPort) {
                 response = storageService.putObject(key, value);
             } else {
-                response = sendReplicationRequest(sortedNodes.get(i), Request.METHOD_PUT, key, value);
+                response = sendReplicationRequest(sortedNodes.get(i), METHOD_PUT, key, value);
             }
 
-            if (response != null && response.getStatus() == STATUS_CREATED) {
+            if (response != null && response.code() == STATUS_CREATED) {
                 ackCount++;
             }
         }
@@ -142,10 +152,10 @@ public class ClusterService {
             if (sortedNodes.get(i).getPort() == currentPort) {
                 response = storageService.removeObject(key);
             } else {
-                response = sendReplicationRequest(sortedNodes.get(i), Request.METHOD_DELETE, key, null);
+                response = sendReplicationRequest(sortedNodes.get(i), METHOD_DELETE, key, null);
             }
 
-            if (response != null && response.getStatus() == STATUS_ACCEPTED) {
+            if (response != null && response.code() == STATUS_ACCEPTED) {
                 ackCount++;
             }
         }
@@ -156,17 +166,24 @@ public class ClusterService {
     }
 
     private Response sendReplicationRequest(Node clusterNode, int method, String id, byte[] body) {
-        Request request = new Request(method, REPLICATION_REQUEST_URL + id, true);
-        request.addHeader(REPLICATION_HEADER + true);
+        Request.Builder builder = new Request.Builder()
+                .url(clusterNode.getConnectionString() + REPLICATION_REQUEST_URL + id)
+                .header(REPLICATION_HEADER, "true");
 
-        if (body != null) {
-            request.addHeader("Content-Length: " + body.length);
-            request.setBody(body);
-        } else {
-            request.addHeader("Content-Length: 0");
+        switch (method) {
+            case METHOD_GET:
+                builder.get();
+                break;
+            case METHOD_PUT:
+                builder.put(RequestBody.create(null, body));
+                break;
+            case METHOD_DELETE:
+                builder.delete();
+                break;
         }
+
         try {
-            return clusterNode.getHttpClient().invoke(request);
+            return clusterNode.getHttpClient().newCall(builder.build()).execute();
         } catch (Exception e) {
             e.printStackTrace();
         }

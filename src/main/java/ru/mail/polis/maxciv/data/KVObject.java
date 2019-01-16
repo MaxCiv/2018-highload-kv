@@ -1,4 +1,4 @@
-package ru.mail.polis.maxciv;
+package ru.mail.polis.maxciv.data;
 
 import org.dizitart.no2.IndexType;
 import org.dizitart.no2.objects.Index;
@@ -7,7 +7,7 @@ import org.dizitart.no2.objects.Indices;
 import java.sql.Timestamp;
 
 @Indices({
-        @Index(value = "keyHex", type = IndexType.NonUnique),
+        @Index(value = "keyHex", type = IndexType.Unique),
 })
 public class KVObject {
 
@@ -20,14 +20,14 @@ public class KVObject {
     public KVObject() {
     }
 
-    KVObject(String keyHex, byte[] key, byte[] value, Timestamp timestamp) {
+    public KVObject(String keyHex, byte[] key, byte[] value, Timestamp timestamp) {
         this.keyHex = keyHex;
         this.key = key;
         this.value = value;
         this.timestamp = timestamp;
     }
 
-    String getKeyHex() {
+    public String getKeyHex() {
         return keyHex;
     }
 
@@ -39,15 +39,15 @@ public class KVObject {
         return value;
     }
 
-    Timestamp getTimestamp() {
+    public Timestamp getTimestamp() {
         return timestamp;
     }
 
-    boolean getRemoved() {
+    public boolean getRemoved() {
         return isRemoved;
     }
 
-    void setRemoved(boolean removed) {
+    public void setRemoved(boolean removed) {
         isRemoved = removed;
     }
 }

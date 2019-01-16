@@ -24,6 +24,12 @@ dependencies {
     // HTTP client for unit tests
     compile("org.apache.httpcomponents:fluent-hc:4.5.3")
 
+    // SHA-3
+    compile("org.bouncycastle:bcpkix-jdk15on:1.60")
+
+    // Cache2k
+    compile("org.cache2k:cache2k-core:1.2.0.Final")
+
     // One NIO
     compile("ru.odnoklassniki:one-nio:1.0.2")
 

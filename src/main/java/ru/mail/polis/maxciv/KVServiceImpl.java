@@ -8,20 +8,22 @@ import one.nio.http.Request;
 import one.nio.http.Response;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.KVService;
-import ru.mail.polis.maxciv.cluster.ClusterService;
+import ru.mail.polis.maxciv.cluster.ClusterController;
+import ru.mail.polis.maxciv.cluster.NodesManager;
 
 import java.io.IOException;
 import java.util.Set;
 
-import static ru.mail.polis.maxciv.util.KVUtils.createServerConfig;
+import static ru.mail.polis.maxciv.util.CommonUtils.createServerConfig;
+import static ru.mail.polis.maxciv.util.ResponceUtils.badRequest;
 
 public class KVServiceImpl extends HttpServer implements KVService {
 
-    private final ClusterService clusterService;
+    private final ClusterController nodesManager;
 
     public KVServiceImpl(int port, KVDao dao, Set<String> topology) throws IOException {
         super(createServerConfig(port));
-        this.clusterService = new ClusterService(port, dao, topology);
+        this.nodesManager = new NodesManager(port, dao, topology);
     }
 
     @Path("/v0/status")
@@ -35,26 +37,25 @@ public class KVServiceImpl extends HttpServer implements KVService {
             @Param(value = "id") String id,
             @Param(value = "replicas") String replicasString
     ) {
-        if (id == null || id.isEmpty() || (replicasString != null && replicasString.isEmpty()))
-            return new Response(Response.BAD_REQUEST, Response.EMPTY);
+        return nodesManager.handleEntityRequest(request, id, request.getBody(), replicasString);
+    }
 
-        boolean isReplication = request.getHeader(ClusterService.REPLICATION_HEADER) != null;
-
-        switch (request.getMethod()) {
-            case Request.METHOD_GET:
-                return clusterService.getObject(id, replicasString, isReplication);
-            case Request.METHOD_PUT:
-                return clusterService.putObject(id, request.getBody(), replicasString, isReplication);
-            case Request.METHOD_DELETE:
-                return clusterService.removeObject(id, replicasString, isReplication);
-            default:
-                return new Response(Response.METHOD_NOT_ALLOWED, Response.EMPTY);
-        }
+    @Path("/v0/replica/entity")
+    public Response handleReplicaEntity(
+            Request request,
+            @Param(value = "id") String id
+    ) {
+        return nodesManager.handleLocalEntityRequest(request, id, request.getBody());
     }
 
     @Override
     public void handleDefault(Request request, HttpSession session) throws IOException {
-        Response response = new Response(Response.BAD_REQUEST, Response.EMPTY);
-        session.sendResponse(response);
+        session.sendResponse(badRequest());
+    }
+
+    @Override
+    public synchronized void stop() {
+        super.stop();
+        nodesManager.getExecutorService().shutdown();
     }
 }

@@ -2,15 +2,16 @@ package ru.mail.polis.maxciv.util;
 
 import one.nio.http.HttpServerConfig;
 import one.nio.server.AcceptorConfig;
-import org.apache.commons.codec.digest.DigestUtils;
+import org.bouncycastle.jcajce.provider.digest.SHA3;
+import org.bouncycastle.util.encoders.Hex;
 
-public final class KVUtils {
+public final class CommonUtils {
 
-    private KVUtils() {
+    private CommonUtils() {
     }
 
-    public static String bytesToMd5Hex(byte[] bytes) {
-        return DigestUtils.md5Hex(bytes);
+    public static String bytesToSha3Hex(byte[] bytes) {
+        return Hex.toHexString(new SHA3.Digest256().digest(bytes));
     }
 
     public static HttpServerConfig createServerConfig(int port) {
@@ -22,9 +23,9 @@ public final class KVUtils {
         return config;
     }
 
-    public static int getMd5StringsDistance(String a, String b) {
+    public static int getSha3StringsDistance(String a, String b) {
         int distance = 0;
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < 64; i++) {
             distance += a.charAt(i) == b.charAt(i) ? 0 : 1;
         }
         return distance;

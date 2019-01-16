@@ -1,10 +1,10 @@
 package ru.mail.polis.maxciv.future;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class Caller<T> {
 
@@ -14,14 +14,9 @@ public class Caller<T> {
         this.executorService = executorService;
     }
 
-    public List<T> makeAllCallsInParallel(List<Callable<T>> calls) {
-        List<T> results = new ArrayList<>();
-        try {
-            List<Future<T>> futures = executorService.invokeAll(calls);
-            for (Future<T> future : futures) results.add(future.get());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return results;
+    public CompletionService<T> makeAllCallsInParallel(List<Callable<T>> calls) {
+        ExecutorCompletionService<T> completionService = new ExecutorCompletionService<>(executorService);
+        calls.forEach(completionService::submit);
+        return completionService;
     }
 }

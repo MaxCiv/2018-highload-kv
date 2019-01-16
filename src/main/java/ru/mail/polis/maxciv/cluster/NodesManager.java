@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -28,6 +29,7 @@ import static ru.mail.polis.maxciv.util.ResponceUtils.accepted;
 import static ru.mail.polis.maxciv.util.ResponceUtils.badRequest;
 import static ru.mail.polis.maxciv.util.ResponceUtils.created;
 import static ru.mail.polis.maxciv.util.ResponceUtils.gatewayTimeout;
+import static ru.mail.polis.maxciv.util.ResponceUtils.internalError;
 import static ru.mail.polis.maxciv.util.ResponceUtils.methodNotAllowed;
 import static ru.mail.polis.maxciv.util.ResponceUtils.notFound;
 
@@ -69,32 +71,36 @@ public class NodesManager implements ClusterController {
         ReplicasConfig replicasConfig = ReplicasConfig.getReplicasFromString(replicasString, topology.size());
         if (id == null || id.isEmpty() || replicasConfig == null)
             return badRequest();
-
-        switch (request.getMethod()) {
-            case Request.METHOD_GET:
-                return getObject(id, replicasConfig);
-            case Request.METHOD_PUT:
-                return putObject(id, request.getBody(), replicasConfig);
-            case Request.METHOD_DELETE:
-                return deleteObject(id, replicasConfig);
-            default:
-                return methodNotAllowed();
+        try {
+            switch (request.getMethod()) {
+                case Request.METHOD_GET:
+                    return getObject(id, replicasConfig);
+                case Request.METHOD_PUT:
+                    return putObject(id, request.getBody(), replicasConfig);
+                case Request.METHOD_DELETE:
+                    return deleteObject(id, replicasConfig);
+                default:
+                    return methodNotAllowed();
+            }
+        } catch (Exception e) {
+            return internalError();
         }
     }
 
-    private Response getObject(String key, ReplicasConfig replicasConfig) {
+    private Response getObject(String key, ReplicasConfig replicasConfig) throws Exception {
         List<Node> sortedNodes = getNodesSortedByDistance(CommonUtils.bytesToSha3Hex(key.getBytes()));
         List<Callable<Response>> calls = sortedNodes.stream()
                 .map(node -> new GetCall(node, localStorageService, key, (node.getPort() == currentPort)))
                 .collect(Collectors.toList());
 
-        List<Response> getResponses = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
+        CompletionService<Response> completionService = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
 
         int ackCount = 0;
         boolean removedFlag = false;
         byte[] resultValue = null;
         long newerTimestamp = 0;
-        for (Response response : getResponses) {
+        for (int i = 0; i < calls.size(); i++) {
+            Response response = completionService.take().get();
             if (response != null && (response.getStatus() == STATUS_OK || response.getStatus() == STATUS_NOT_FOUND)) {
                 ackCount++;
                 if (response.getStatus() == STATUS_OK) {
@@ -120,16 +126,17 @@ public class NodesManager implements ClusterController {
         return gatewayTimeout();
     }
 
-    private Response putObject(String key, byte[] value, ReplicasConfig replicasConfig) {
+    private Response putObject(String key, byte[] value, ReplicasConfig replicasConfig) throws Exception {
         List<Node> sortedNodes = getNodesSortedByDistance(CommonUtils.bytesToSha3Hex(key.getBytes()));
         List<Callable<Response>> calls = sortedNodes.stream()
                 .map(node -> new PutCall(node, localStorageService, key, (node.getPort() == currentPort), value))
                 .collect(Collectors.toList());
 
-        List<Response> putResponses = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
+        CompletionService<Response> completionService = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
 
         int ackCount = 0;
-        for (Response response : putResponses) {
+        for (int i = 0; i < calls.size(); i++) {
+            Response response = completionService.take().get();
             if (response != null && response.getStatus() == STATUS_CREATED) {
                 ackCount++;
             }
@@ -140,16 +147,17 @@ public class NodesManager implements ClusterController {
         return gatewayTimeout();
     }
 
-    private Response deleteObject(String key, ReplicasConfig replicasConfig) {
+    private Response deleteObject(String key, ReplicasConfig replicasConfig) throws Exception {
         List<Node> sortedNodes = getNodesSortedByDistance(CommonUtils.bytesToSha3Hex(key.getBytes()));
         List<Callable<Response>> calls = sortedNodes.stream()
                 .map(node -> new DeleteCall(node, localStorageService, key, (node.getPort() == currentPort)))
                 .collect(Collectors.toList());
 
-        List<Response> deleteResponses = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
+        CompletionService<Response> completionService = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
 
         int ackCount = 0;
-        for (Response response : deleteResponses) {
+        for (int i = 0; i < calls.size(); i++) {
+            Response response = completionService.take().get();
             if (response != null && response.getStatus() == STATUS_ACCEPTED) {
                 ackCount++;
             }

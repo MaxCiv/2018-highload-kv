@@ -1,5 +1,7 @@
 package ru.mail.polis.maxciv;
 
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.objects.ObjectRepository;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +18,7 @@ import static ru.mail.polis.maxciv.util.CommonUtils.bytesToSha3Hex;
 public class KVDaoImpl implements KVDao {
 
     private final ObjectRepository<KVObject> repository;
+    private final Cache<String, KVObject> cache;
     private final Nitrite db;
 
     public KVDaoImpl(@NotNull File baseDir) {
@@ -23,22 +26,33 @@ public class KVDaoImpl implements KVDao {
                 .filePath(baseDir.getPath() + File.separator + "key_value.db")
                 .openOrCreate();
         repository = db.getRepository(KVObject.class);
+        cache = new Cache2kBuilder<String, KVObject>() {
+        }.eternal(true)
+                .entryCapacity(100)
+                .build();
     }
 
     @NotNull
     @Override
     public byte[] get(@NotNull byte[] key) throws NoSuchElementException {
-        KVObject keyValueObject = repository.find(eq("keyHex", bytesToSha3Hex(key))).firstOrDefault();
+        final String keyHex = bytesToSha3Hex(key);
+        KVObject keyValueObject = cache.peek(keyHex);
+        if (keyValueObject != null) return keyValueObject.getValue();
+
+        keyValueObject = repository.find(eq("keyHex", keyHex)).firstOrDefault();
         if (keyValueObject == null) throw new NoSuchElementException();
+
         return keyValueObject.getValue();
     }
 
     @Override
     public void upsert(@NotNull byte[] key, @NotNull byte[] value) {
-        String keyHex = bytesToSha3Hex(key);
+        final String keyHex = bytesToSha3Hex(key);
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         try {
-            repository.update(eq("keyHex", keyHex), new KVObject(keyHex, key, value, timestamp), true);
+            KVObject kvObject = new KVObject(keyHex, key, value, timestamp);
+            repository.update(eq("keyHex", keyHex), kvObject, true);
+            cache.put(keyHex, kvObject);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -46,7 +60,9 @@ public class KVDaoImpl implements KVDao {
 
     @Override
     public void remove(@NotNull byte[] key) {
-        repository.remove(eq("keyHex", bytesToSha3Hex(key)));
+        final String keyHex = bytesToSha3Hex(key);
+        repository.remove(eq("keyHex", keyHex));
+        cache.remove(keyHex);
     }
 
     @Override

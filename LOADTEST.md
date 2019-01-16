@@ -1,3 +1,6 @@
+# Stage 3
+
+
 ## До оптимизаций
 
 PUT 2/3
@@ -32,7 +35,6 @@ Running 2m test @ http://localhost:8080
      90%  334.00us
      99%    1.27ms
   2090158 requests in 2.00m, 135.55MB read
-  Non-2xx or 3xx responses: 522540
 Requests/sec:  17416.80
 Transfer/sec:      1.13MB
 ```
@@ -43,17 +45,18 @@ $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
   2 threads and 4 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   192.56us    0.99ms  70.91ms   99.38%
-    Req/Sec    12.11k     1.09k   18.21k    91.21%
+    Latency   228.63us  805.13us  52.87ms   98.42%
+    Req/Sec    10.43k     1.27k   12.20k    88.17%
   Latency Distribution
-     50%  166.00us
-     75%  190.00us
-     90%  232.00us
-     99%    1.02ms
-  2894049 requests in 2.00m, 711.38MB read
-  Non-2xx or 3xx responses: 723513
-Requests/sec:  24096.56
-Transfer/sec:      5.92MB
+     50%  191.00us
+     75%  233.00us
+     90%  285.00us
+     99%    1.18ms
+  2489968 requests in 2.00m, 182.85MB read
+  Socket errors: connect 0, read 1, write 0, timeout 0
+  Non-2xx or 3xx responses: 622497
+Requests/sec:  20749.12
+Transfer/sec:      1.52MB
 ```
 
 #### PUT/GET 3/3
@@ -70,7 +73,6 @@ Running 2m test @ http://localhost:8080
      90%  328.00us
      99%    1.15ms
   2382812 requests in 2.00m, 370.12MB read
-  Non-2xx or 3xx responses: 595703
 Requests/sec:  19856.11
 Transfer/sec:      3.08MB
 ```
@@ -81,17 +83,17 @@ $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
   2 threads and 4 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   212.05us  344.50us  20.14ms   95.38%
-    Req/Sec    11.13k     3.21k   15.53k    61.87%
+    Latency   217.94us  223.34us   7.69ms   94.89%
+    Req/Sec     9.90k     1.16k   11.80k    71.32%
   Latency Distribution
-     50%  172.00us
-     75%  221.00us
-     90%  334.00us
-     99%    1.26ms
-  2657909 requests in 2.00m, 412.85MB read
-  Non-2xx or 3xx responses: 664477
-Requests/sec:  22147.88
-Transfer/sec:      3.44MB
+     50%  183.00us
+     75%  225.00us
+     90%  298.00us
+     99%    1.36ms
+  2364873 requests in 2.00m, 173.66MB read
+  Non-2xx or 3xx responses: 591218
+Requests/sec:  19690.46
+Transfer/sec:      1.45MB
 ```
 
 
@@ -110,7 +112,6 @@ Running 2m test @ http://localhost:8080
      90%  318.00us
      99%    1.52ms
   2354001 requests in 2.00m, 152.66MB read
-  Non-2xx or 3xx responses: 588501
 Requests/sec:  19613.72
 Transfer/sec:      1.27MB
 ```
@@ -129,50 +130,10 @@ Running 2m test @ http://localhost:8080
      90%  266.00us
      99%    1.17ms
   2631728 requests in 2.00m, 215.84MB read
-  Non-2xx or 3xx responses: 657933
 Requests/sec:  21930.11
 Transfer/sec:      1.80MB
 ```
 
-#### PUT/GET 3/3
-```
-$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
-Running 2m test @ http://localhost:8080
-  2 threads and 4 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   206.10us  238.30us  12.31ms   94.95%
-    Req/Sec    10.93k   607.70    12.00k    75.33%
-  Latency Distribution
-     50%  176.00us
-     75%  205.00us
-     90%  254.00us
-     99%    1.40ms
-  2609506 requests in 2.00m, 191.62MB read
-  Non-2xx or 3xx responses: 652377
-Requests/sec:  21744.37
-Transfer/sec:      1.60MB
-```
-
-#### PUT/GET 2/3
-```
-$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
-Running 2m test @ http://localhost:8080
-  2 threads and 4 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   213.29us  250.24us   4.40ms   94.75%
-    Req/Sec    10.72k   617.34    11.91k    74.75%
-  Latency Distribution
-     50%  178.00us
-     75%  208.00us
-     90%  268.00us
-     99%    1.48ms
-  2560374 requests in 2.00m, 188.02MB read
-  Non-2xx or 3xx responses: 640094
-Requests/sec:  21334.92
-Transfer/sec:      1.57MB
-```
-
-## После оптимизации Future
 #### PUT/GET 3/3
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
@@ -187,7 +148,6 @@ Running 2m test @ http://localhost:8080
      90%  311.00us
      99%    1.32ms
   2334600 requests in 2.00m, 171.44MB read
-  Non-2xx or 3xx responses: 583654
 Requests/sec:  19452.26
 Transfer/sec:      1.43MB
 ```
@@ -206,7 +166,80 @@ Running 2m test @ http://localhost:8080
      90%  287.00us
      99%    1.20ms
   2461512 requests in 2.00m, 180.76MB read
-  Non-2xx or 3xx responses: 615379
 Requests/sec:  20495.06
 Transfer/sec:      1.51MB
+```
+
+## После оптимизации Cache
+#### PUT/GET 3/3
+```
+$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
+Running 2m test @ http://localhost:8080
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   206.10us  238.30us  12.31ms   94.95%
+    Req/Sec    10.93k   607.70    12.00k    75.33%
+  Latency Distribution
+     50%  176.00us
+     75%  205.00us
+     90%  254.00us
+     99%    1.40ms
+  2609506 requests in 2.00m, 191.62MB read
+Requests/sec:  21744.37
+Transfer/sec:      1.60MB
+```
+
+#### PUT/GET 2/3
+```
+$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
+Running 2m test @ http://localhost:8080
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   213.29us  250.24us   4.40ms   94.75%
+    Req/Sec    10.72k   617.34    11.91k    74.75%
+  Latency Distribution
+     50%  178.00us
+     75%  208.00us
+     90%  268.00us
+     99%    1.48ms
+  2560374 requests in 2.00m, 188.02MB read
+Requests/sec:  21334.92
+Transfer/sec:      1.57MB
+```
+
+## После оптимизации Future
+#### PUT/GET 3/3
+```
+$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
+Running 2m test @ http://localhost:8080
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   239.94us    1.04ms  61.22ms   98.71%
+    Req/Sec    10.82k     1.81k   12.59k    91.33%
+  Latency Distribution
+     50%  170.00us
+     75%  204.00us
+     90%  274.00us
+     99%    1.35ms
+  2584878 requests in 2.00m, 189.82MB read
+Requests/sec:  21538.18
+Transfer/sec:      1.58MB
+```
+
+#### PUT/GET 2/3
+```
+$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
+Running 2m test @ http://localhost:8080
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   208.42us  760.81us  62.00ms   97.83%
+    Req/Sec    11.15k   583.12    12.29k    82.96%
+  Latency Distribution
+     50%  173.00us
+     75%  202.00us
+     90%  246.00us
+     99%    1.26ms
+  2662246 requests in 2.00m, 195.50MB read
+Requests/sec:  22184.47
+Transfer/sec:      1.63MB
 ```

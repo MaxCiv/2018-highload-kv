@@ -93,13 +93,14 @@ public class NodesManager implements ClusterController {
                 .map(node -> new GetCall(node, localStorageService, key, (node.getPort() == currentPort)))
                 .collect(Collectors.toList());
 
-        CompletionService<Response> completionService = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
+        CompletionService<Response> completionService = new Caller<Response>(executorService)
+                .makeAllCallsInParallel(calls.subList(0,replicasConfig.getFrom()));
 
         int ackCount = 0;
         boolean removedFlag = false;
         byte[] resultValue = null;
         long newerTimestamp = 0;
-        for (int i = 0; i < calls.size(); i++) {
+        for (int i = 0; i < replicasConfig.getFrom(); i++) {
             Response response = completionService.take().get();
             if (response != null && (response.getStatus() == STATUS_OK || response.getStatus() == STATUS_NOT_FOUND)) {
                 ackCount++;
@@ -132,10 +133,11 @@ public class NodesManager implements ClusterController {
                 .map(node -> new PutCall(node, localStorageService, key, (node.getPort() == currentPort), value))
                 .collect(Collectors.toList());
 
-        CompletionService<Response> completionService = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
+        CompletionService<Response> completionService = new Caller<Response>(executorService)
+                .makeAllCallsInParallel(calls.subList(0,replicasConfig.getFrom()));
 
         int ackCount = 0;
-        for (int i = 0; i < calls.size(); i++) {
+        for (int i = 0; i < replicasConfig.getFrom(); i++) {
             Response response = completionService.take().get();
             if (response != null && response.getStatus() == STATUS_CREATED) {
                 ackCount++;
@@ -153,10 +155,11 @@ public class NodesManager implements ClusterController {
                 .map(node -> new DeleteCall(node, localStorageService, key, (node.getPort() == currentPort)))
                 .collect(Collectors.toList());
 
-        CompletionService<Response> completionService = new Caller<Response>(executorService).makeAllCallsInParallel(calls);
+        CompletionService<Response> completionService = new Caller<Response>(executorService)
+                .makeAllCallsInParallel(calls.subList(0,replicasConfig.getFrom()));
 
         int ackCount = 0;
-        for (int i = 0; i < calls.size(); i++) {
+        for (int i = 0; i < replicasConfig.getFrom(); i++) {
             Response response = completionService.take().get();
             if (response != null && response.getStatus() == STATUS_ACCEPTED) {
                 ackCount++;

@@ -2,10 +2,14 @@ package ru.mail.polis.maxciv;
 
 import one.nio.http.Response;
 import ru.mail.polis.KVDao;
+import ru.mail.polis.maxciv.data.KVObject;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
+
+import static ru.mail.polis.maxciv.util.ResponceUtils.ACCEPTED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.CREATED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.NOT_FOUND;
 
 public class StorageService {
 
@@ -29,24 +33,18 @@ public class StorageService {
             if (object.getRemoved())
                 response.addHeader(ENTITY_REMOVED_HEADER + true);
         } catch (NoSuchElementException e) {
-            response = new Response(Response.NOT_FOUND, Response.EMPTY);
+            response = NOT_FOUND();
         }
         return response;
     }
 
     public Response putObject(String key, byte[] value) {
-        Response response;
-        try {
-            dao.upsert(key.getBytes(Charset.forName("UTF-8")), value);
-            response = new Response(Response.CREATED, Response.EMPTY);
-        } catch (IOException e) {
-            response = new Response(Response.INTERNAL_ERROR, Response.EMPTY);
-        }
-        return response;
+        dao.upsert(key.getBytes(Charset.forName("UTF-8")), value);
+        return CREATED();
     }
 
     public Response removeObject(String key) {
         dao.setRemoved(key.getBytes(Charset.forName("UTF-8")));
-        return new Response(Response.ACCEPTED, Response.EMPTY);
+        return ACCEPTED();
     }
 }

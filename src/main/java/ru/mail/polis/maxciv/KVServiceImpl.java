@@ -13,7 +13,9 @@ import ru.mail.polis.maxciv.cluster.ClusterService;
 import java.io.IOException;
 import java.util.Set;
 
-import static ru.mail.polis.maxciv.util.KVUtils.createServerConfig;
+import static ru.mail.polis.maxciv.util.CommonUtils.createServerConfig;
+import static ru.mail.polis.maxciv.util.ResponceUtils.BAD_REQUEST;
+import static ru.mail.polis.maxciv.util.ResponceUtils.METHOD_NOT_ALLOWED;
 
 public class KVServiceImpl extends HttpServer implements KVService {
 
@@ -36,7 +38,7 @@ public class KVServiceImpl extends HttpServer implements KVService {
             @Param(value = "replicas") String replicasString
     ) {
         if (id == null || id.isEmpty() || (replicasString != null && replicasString.isEmpty()))
-            return new Response(Response.BAD_REQUEST, Response.EMPTY);
+            return BAD_REQUEST();
 
         boolean isReplication = request.getHeader(ClusterService.REPLICATION_HEADER) != null;
 
@@ -48,13 +50,12 @@ public class KVServiceImpl extends HttpServer implements KVService {
             case Request.METHOD_DELETE:
                 return clusterService.removeObject(id, replicasString, isReplication);
             default:
-                return new Response(Response.METHOD_NOT_ALLOWED, Response.EMPTY);
+                return METHOD_NOT_ALLOWED();
         }
     }
 
     @Override
     public void handleDefault(Request request, HttpSession session) throws IOException {
-        Response response = new Response(Response.BAD_REQUEST, Response.EMPTY);
-        session.sendResponse(response);
+        session.sendResponse(BAD_REQUEST());
     }
 }

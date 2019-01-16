@@ -4,14 +4,14 @@ import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.objects.ObjectRepository;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.KVDao;
+import ru.mail.polis.maxciv.data.KVObject;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
 import static org.dizitart.no2.objects.filters.ObjectFilters.eq;
-import static ru.mail.polis.maxciv.util.KVUtils.bytesToMd5Hex;
+import static ru.mail.polis.maxciv.util.CommonUtils.bytesToSha3Hex;
 
 public class KVDaoImpl implements KVDao {
 
@@ -22,39 +22,38 @@ public class KVDaoImpl implements KVDao {
         db = Nitrite.builder()
                 .filePath(baseDir.getPath() + File.separator + "key_value.db")
                 .openOrCreate();
-
         repository = db.getRepository(KVObject.class);
     }
 
     @NotNull
     @Override
-    public byte[] get(@NotNull byte[] key) throws NoSuchElementException, IOException {
-        KVObject keyValueObject = repository.find(eq("keyHex", bytesToMd5Hex(key))).firstOrDefault();
+    public byte[] get(@NotNull byte[] key) throws NoSuchElementException {
+        KVObject keyValueObject = repository.find(eq("keyHex", bytesToSha3Hex(key))).firstOrDefault();
         if (keyValueObject == null) throw new NoSuchElementException();
         return keyValueObject.getValue();
     }
 
     @Override
-    public void upsert(@NotNull byte[] key, @NotNull byte[] value) throws IOException {
-        String keyHex = bytesToMd5Hex(key);
+    public void upsert(@NotNull byte[] key, @NotNull byte[] value) {
+        String keyHex = bytesToSha3Hex(key);
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         repository.update(eq("keyHex", keyHex), new KVObject(keyHex, key, value, timestamp), true);
     }
 
     @Override
-    public void remove(@NotNull byte[] key) throws IOException {
-        repository.remove(eq("keyHex", bytesToMd5Hex(key)));
+    public void remove(@NotNull byte[] key) {
+        repository.remove(eq("keyHex", bytesToSha3Hex(key)));
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         repository.close();
         db.close();
     }
 
     @NotNull
     KVObject getObject(@NotNull byte[] key) throws NoSuchElementException {
-        KVObject keyValueObject = repository.find(eq("keyHex", bytesToMd5Hex(key))).firstOrDefault();
+        KVObject keyValueObject = repository.find(eq("keyHex", bytesToSha3Hex(key))).firstOrDefault();
         if (keyValueObject == null) throw new NoSuchElementException();
         return keyValueObject;
     }
@@ -64,8 +63,7 @@ public class KVDaoImpl implements KVDao {
             KVObject keyValueObject = getObject(key);
             keyValueObject.setRemoved(true);
             repository.update(eq("keyHex", keyValueObject.getKeyHex()), keyValueObject, false);
-        } catch (NoSuchElementException e) {
-            return;
+        } catch (NoSuchElementException ignored) {
         }
     }
 }

@@ -4,22 +4,31 @@ import one.nio.http.Request;
 import one.nio.http.Response;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.maxciv.StorageService;
-import ru.mail.polis.maxciv.util.KVUtils;
+import ru.mail.polis.maxciv.data.Replicas;
+import ru.mail.polis.maxciv.util.CommonUtils;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static one.nio.http.Response.ok;
+import static ru.mail.polis.maxciv.util.ResponceUtils.ACCEPTED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.BAD_REQUEST;
+import static ru.mail.polis.maxciv.util.ResponceUtils.CREATED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.GATEWAY_TIMEOUT;
+import static ru.mail.polis.maxciv.util.ResponceUtils.NOT_FOUND;
+import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_ACCEPTED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_CREATED;
+import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_NOT_FOUND;
+import static ru.mail.polis.maxciv.util.ResponceUtils.STATUS_OK;
+
 public class ClusterService {
 
     public static final String REPLICATION_HEADER = "Replication: ";
 
-    private static final String REPLICATION_REQUEST_URL = "/v0/entity?id=";
-    private static final int STATUS_OK = 200;
-    private static final int STATUS_CREATED = 201;
-    private static final int STATUS_ACCEPTED = 202;
-    private static final int STATUS_NOT_FOUND = 404;
+    private static final String REPLICATION_REQUEST_URL = "/v0/entity?replicas=3/3&id=";
+//    private static final String REPLICATION_REQUEST_URL = "/v0/entity?id=";
 
     private final StorageService storageService;
     private final int currentPort;
@@ -36,7 +45,7 @@ public class ClusterService {
     public Response getObject(String key, String replicasString, boolean isReplication) {
         Replicas replicas = getReplicasFromString(replicasString);
         if (replicas == null) {
-            return new Response(Response.BAD_REQUEST, Response.EMPTY);
+            return BAD_REQUEST();
         }
 
         if (isReplication) {
@@ -47,7 +56,7 @@ public class ClusterService {
         boolean removedFlag = false;
         byte[] resultValue = null;
         long newerTimestamp = 0;
-        List<Node> sortedNodes = getNodesSortedByDistance(KVUtils.bytesToMd5Hex(key.getBytes()));
+        List<Node> sortedNodes = getNodesSortedByDistance(CommonUtils.bytesToSha3Hex(key.getBytes()));
 
         for (int i = 0; i < replicas.getFrom(); i++) {
             Response response;
@@ -76,26 +85,26 @@ public class ClusterService {
             }
             if (ackCount >= replicas.getAck()) {
                 if (removedFlag || resultValue == null) {
-                    return new Response(Response.NOT_FOUND, Response.EMPTY);
+                    return NOT_FOUND();
                 } else {
-                    return new Response(Response.OK, resultValue);
+                    return ok(resultValue);
                 }
             }
         }
-        return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
+        return GATEWAY_TIMEOUT();
     }
 
     public Response putObject(String key, byte[] value, String replicasString, boolean isReplication) {
         Replicas replicas = getReplicasFromString(replicasString);
 
         if (replicas == null)
-            return new Response(Response.BAD_REQUEST, Response.EMPTY);
+            return BAD_REQUEST();
 
         if (isReplication)
             return storageService.putObject(key, value);
 
         int ackCount = 0;
-        List<Node> sortedNodes = getNodesSortedByDistance(KVUtils.bytesToMd5Hex(key.getBytes()));
+        List<Node> sortedNodes = getNodesSortedByDistance(CommonUtils.bytesToSha3Hex(key.getBytes()));
 
         for (int i = 0; i < replicas.getFrom(); i++) {
             Response response;
@@ -111,22 +120,22 @@ public class ClusterService {
             }
         }
         if (ackCount >= replicas.getAck())
-            return new Response(Response.CREATED, Response.EMPTY);
+            return CREATED();
 
-        return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
+        return GATEWAY_TIMEOUT();
     }
 
     public Response removeObject(String key, String replicasString, boolean isReplication) {
         Replicas replicas = getReplicasFromString(replicasString);
 
         if (replicas == null)
-            return new Response(Response.BAD_REQUEST, Response.EMPTY);
+            return BAD_REQUEST();
 
         if (isReplication)
             return storageService.removeObject(key);
 
         int ackCount = 0;
-        List<Node> sortedNodes = getNodesSortedByDistance(KVUtils.bytesToMd5Hex(key.getBytes()));
+        List<Node> sortedNodes = getNodesSortedByDistance(CommonUtils.bytesToSha3Hex(key.getBytes()));
 
         for (int i = 0; i < replicas.getFrom(); i++) {
             Response response;
@@ -141,9 +150,9 @@ public class ClusterService {
             }
         }
         if (ackCount >= replicas.getAck())
-            return new Response(Response.ACCEPTED, Response.EMPTY);
+            return ACCEPTED();
 
-        return new Response(Response.GATEWAY_TIMEOUT, Response.EMPTY);
+        return GATEWAY_TIMEOUT();
     }
 
     private Response sendReplicationRequest(Node clusterNode, int method, String id, byte[] body) {
@@ -153,6 +162,8 @@ public class ClusterService {
         if (body != null) {
             request.addHeader("Content-Length: " + body.length);
             request.setBody(body);
+        } else {
+            request.addHeader("Content-Length: 0");
         }
         try {
             return clusterNode.getHttpClient().invoke(request);

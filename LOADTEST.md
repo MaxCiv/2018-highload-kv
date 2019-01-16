@@ -1,27 +1,56 @@
 # Stage 3
+На данном этапе для профилирования использовался [async-profiler](https://github.com/jvm-profiling-tools/async-profiler)
+(который также [стал доступен в IntelliJ IDEA v2018.3 UE](https://blog.jetbrains.com/idea/2018/09/intellij-idea-2018-3-eap-git-submodules-jvm-profiler-macos-and-linux-and-more/)),
+для нагрузочного тестирования использовались [wrk](https://github.com/wg/wrk),
+[go-wrk](https://github.com/tsliwowicz/go-wrk) (почти как wrk, но только на Go) и [Yandex.Tank](https://overload.yandex.net/).
 
+До начала переписывания программы были сделаны измерения в Yandex.Tank, вот они:
 
-## До оптимизаций
-
-PUT 2/3
+* PUT 2/3
 https://overload.yandex.net/153036
 
-PUT 3/3
+* PUT 3/3
 https://overload.yandex.net/153038
 
-GET 2/3
+* GET 2/3
 https://overload.yandex.net/153039
 
-GET 3/3
+* GET 3/3
 https://overload.yandex.net/153040
 
-PUT/GET 2/3
+* PUT/GET 2/3
 https://overload.yandex.net/153044
 
-PUT/GET 3/3
+* PUT/GET 3/3
 https://overload.yandex.net/153046
 
+Однако, время на них можно не тратить, как оказалось, адекватно работать Yandex.Tank может 
+только в Linux-системах. Проводить нормальные измерения из docker-контейнера на Windows и Mac OS
+мешает тот факт, что Docker на этих системах работает на виртуальной машине, отсюда проблемы с сетью
+и результаты измерений, не соответствующие реальности. Просто запустить Yandex.Tank у меня
+не получилось потому, что не билдится [Phantom](https://github.com/yandex-load/phantom)
+(i/o engine, который использует Yandex.Tank).
+
+## Оптимизации
+Основное время выполнения программы уходит на работу one-nio сервера и базы данных [Nitrite](https://github.com/dizitart/nitrite-database),
+но есть места, которые можно оптимизировать. Проводились следующие улучшения:
+
+1. общие улучшения и изменения по коду, более оптимальные проверки, использование Future для
+одновременного обращения сразу ко всем нодам кластера;
+
+1. чтобы уменьшить время работы с БД и, соответственно, увеличить скорость ответа на GET-запросы
+был использован [кэш](https://github.com/cache2k/cache2k);
+
+1. оптимизация на шаге 1 добавила использование Future, но была написана так, что не было разницы между
+4/7 и 7/7 – всё равно ожидался ответ от каждой ноды в кластере, даже если это было не нужно. На этом
+шаге логика работы с Future изменилась так, что стало достаточно дождаться только необходимых
+успешных ответов.
+
+Также были безрезультатные попытки заменить http client.
+
+## До оптимизаций
 #### PUT 3/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -40,6 +69,7 @@ Transfer/sec:      1.13MB
 ```
 
 #### GET 3/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -60,6 +90,7 @@ Transfer/sec:      1.52MB
 ```
 
 #### PUT/GET 3/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -78,6 +109,7 @@ Transfer/sec:      3.08MB
 ```
 
 #### PUT/GET 2/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -95,7 +127,6 @@ Running 2m test @ http://localhost:8080
 Requests/sec:  19690.46
 Transfer/sec:      1.45MB
 ```
-
 
 ## После оптимизаций
 #### PUT 3/3
@@ -135,6 +166,7 @@ Transfer/sec:      1.80MB
 ```
 
 #### PUT/GET 3/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -153,6 +185,7 @@ Transfer/sec:      1.43MB
 ```
 
 #### PUT/GET 2/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -172,6 +205,7 @@ Transfer/sec:      1.51MB
 
 ## После оптимизации Cache
 #### PUT/GET 3/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -190,6 +224,7 @@ Transfer/sec:      1.60MB
 ```
 
 #### PUT/GET 2/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -209,6 +244,7 @@ Transfer/sec:      1.57MB
 
 ## После оптимизации Future
 #### PUT/GET 3/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -227,6 +263,7 @@ Transfer/sec:      1.58MB
 ```
 
 #### PUT/GET 2/3
+[Flame Graph by async-profiler]()
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080

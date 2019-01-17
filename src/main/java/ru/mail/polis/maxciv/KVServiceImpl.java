@@ -14,6 +14,7 @@ import ru.mail.polis.maxciv.cluster.NodesManager;
 import java.io.IOException;
 import java.util.Set;
 
+import static one.nio.http.Response.ok;
 import static ru.mail.polis.maxciv.util.CommonUtils.createServerConfig;
 import static ru.mail.polis.maxciv.util.ResponceUtils.badRequest;
 
@@ -28,7 +29,7 @@ public class KVServiceImpl extends HttpServer implements KVService {
 
     @Path("/v0/status")
     public Response handleStatus() {
-        return Response.ok("Status: OK");
+        return ok("Status: OK");
     }
 
     @Path("/v0/entity")

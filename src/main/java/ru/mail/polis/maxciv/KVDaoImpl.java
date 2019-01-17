@@ -5,6 +5,8 @@ import org.cache2k.Cache2kBuilder;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.objects.ObjectRepository;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.maxciv.data.KVObject;
 
@@ -17,6 +19,8 @@ import static ru.mail.polis.maxciv.util.CommonUtils.bytesToSha3Hex;
 
 public class KVDaoImpl implements KVDao {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(KVDaoImpl.class);
+
     private final ObjectRepository<KVObject> repository;
     private final Cache<String, KVObject> cache;
     private final Nitrite db;
@@ -26,8 +30,8 @@ public class KVDaoImpl implements KVDao {
                 .filePath(baseDir.getPath() + File.separator + "key_value.db")
                 .openOrCreate();
         repository = db.getRepository(KVObject.class);
-        cache = new Cache2kBuilder<String, KVObject>() {
-        }.eternal(true)
+        cache = new Cache2kBuilder<String, KVObject>() {}
+                .eternal(true)
                 .entryCapacity(100)
                 .build();
     }
@@ -54,7 +58,7 @@ public class KVDaoImpl implements KVDao {
             repository.update(eq("keyHex", keyHex), kvObject, true);
             cache.put(keyHex, kvObject);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error while upsert value with keyHex={}", keyHex, e);
         }
     }
 

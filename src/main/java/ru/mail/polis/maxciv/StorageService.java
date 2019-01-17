@@ -7,6 +7,7 @@ import ru.mail.polis.maxciv.data.KVObject;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
 
+import static one.nio.http.Response.ok;
 import static ru.mail.polis.maxciv.util.ResponceUtils.accepted;
 import static ru.mail.polis.maxciv.util.ResponceUtils.created;
 import static ru.mail.polis.maxciv.util.ResponceUtils.notFound;
@@ -27,7 +28,7 @@ public class StorageService {
         try {
             KVObject object = dao.getObject(key.getBytes(Charset.forName("UTF-8")));
 
-            response = Response.ok(object.getValue());
+            response = ok(object.getValue());
             response.addHeader(ENTITY_TIMESTAMP_HEADER + object.getTimestamp().getTime());
 
             if (object.getRemoved())

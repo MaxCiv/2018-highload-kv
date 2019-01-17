@@ -9,11 +9,13 @@ public class Node {
     private final String idSha3;
     private final int port;
     private final HttpClient httpClient;
+    private final String connectionString;
 
     Node(String connectionString) {
         this.idSha3 = CommonUtils.bytesToSha3Hex(connectionString.getBytes());
         this.port = Integer.valueOf(connectionString.split(":")[2]);
-        httpClient = new HttpClient(new ConnectionString(connectionString));
+        this.httpClient = new HttpClient(new ConnectionString(connectionString));
+        this.connectionString = connectionString;
     }
 
     int getDistance(String stringSha3) {
@@ -26,5 +28,9 @@ public class Node {
 
     public HttpClient getHttpClient() {
         return httpClient;
+    }
+
+    public String getConnectionString() {
+        return connectionString;
     }
 }

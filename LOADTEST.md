@@ -280,3 +280,44 @@ Running 2m test @ http://localhost:8080
 Requests/sec:  22184.47
 Transfer/sec:      1.63MB
 ```
+
+
+## После ревью-фиксов
+#### PUT/GET 3/3
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%205/put_get_3_3_2m.svg)
+```
+$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
+Running 2m test @ http://localhost:8080
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   223.43us  267.14us  10.86ms   94.45%
+    Req/Sec    10.12k   753.51    12.08k    80.83%
+  Latency Distribution
+     50%  180.00us
+     75%  217.00us
+     90%  317.00us
+     99%    1.46ms
+  2415831 requests in 2.00m, 177.40MB read
+  Non-2xx or 3xx responses: 603958
+Requests/sec:  20130.97
+Transfer/sec:      1.48MB
+```
+
+#### PUT/GET 2/3
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%205/put_get_2_3_2m.svg)
+```
+$ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
+Running 2m test @ http://localhost:8080
+  2 threads and 4 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   191.47us  201.76us   6.62ms   94.99%
+    Req/Sec    11.40k     0.96k   12.59k    93.50%
+  Latency Distribution
+     50%  166.00us
+     75%  191.00us
+     90%  233.00us
+     99%    1.25ms
+  2721903 requests in 2.00m, 199.88MB read
+Requests/sec:  22679.68
+Transfer/sec:      1.67MB
+```

@@ -2,6 +2,8 @@ package ru.mail.polis.maxciv.cluster;
 
 import one.nio.http.Request;
 import one.nio.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.mail.polis.KVDao;
 import ru.mail.polis.maxciv.StorageService;
 import ru.mail.polis.maxciv.data.ReplicasConfig;
@@ -34,6 +36,8 @@ import static ru.mail.polis.maxciv.util.ResponceUtils.methodNotAllowed;
 import static ru.mail.polis.maxciv.util.ResponceUtils.notFound;
 
 public class NodesManager implements ClusterController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NodesManager.class);
 
     private final StorageService localStorageService;
     private final int currentPort;
@@ -83,6 +87,7 @@ public class NodesManager implements ClusterController {
                     return methodNotAllowed();
             }
         } catch (Exception e) {
+            LOGGER.error("Error while handleEntityRequest {}", request.getMethod(), e);
             return internalError();
         }
     }
@@ -94,7 +99,7 @@ public class NodesManager implements ClusterController {
                 .collect(Collectors.toList());
 
         CompletionService<Response> completionService = new Caller<Response>(executorService)
-                .makeAllCallsInParallel(calls.subList(0,replicasConfig.getFrom()));
+                .makeAllCallsInParallel(calls.subList(0, replicasConfig.getFrom()));
 
         int ackCount = 0;
         boolean removedFlag = false;
@@ -116,13 +121,9 @@ public class NodesManager implements ClusterController {
                     }
                 }
             }
-            if (ackCount >= replicasConfig.getAck()) {
-                if (removedFlag || resultValue == null) {
-                    return notFound();
-                } else {
-                    return ok(resultValue);
-                }
-            }
+            if (ackCount >= replicasConfig.getAck()) return (removedFlag || resultValue == null)
+                    ? notFound()
+                    : ok(resultValue);
         }
         return gatewayTimeout();
     }
@@ -134,18 +135,16 @@ public class NodesManager implements ClusterController {
                 .collect(Collectors.toList());
 
         CompletionService<Response> completionService = new Caller<Response>(executorService)
-                .makeAllCallsInParallel(calls.subList(0,replicasConfig.getFrom()));
+                .makeAllCallsInParallel(calls.subList(0, replicasConfig.getFrom()));
 
         int ackCount = 0;
         for (int i = 0; i < replicasConfig.getFrom(); i++) {
             Response response = completionService.take().get();
-            if (response != null && response.getStatus() == STATUS_CREATED) {
+            if (response != null && response.getStatus() == STATUS_CREATED)
                 ackCount++;
-            }
+            if (ackCount >= replicasConfig.getAck())
+                return created();
         }
-        if (ackCount >= replicasConfig.getAck())
-            return created();
-
         return gatewayTimeout();
     }
 
@@ -156,18 +155,16 @@ public class NodesManager implements ClusterController {
                 .collect(Collectors.toList());
 
         CompletionService<Response> completionService = new Caller<Response>(executorService)
-                .makeAllCallsInParallel(calls.subList(0,replicasConfig.getFrom()));
+                .makeAllCallsInParallel(calls.subList(0, replicasConfig.getFrom()));
 
         int ackCount = 0;
         for (int i = 0; i < replicasConfig.getFrom(); i++) {
             Response response = completionService.take().get();
-            if (response != null && response.getStatus() == STATUS_ACCEPTED) {
+            if (response != null && response.getStatus() == STATUS_ACCEPTED)
                 ackCount++;
-            }
+            if (ackCount >= replicasConfig.getAck())
+                return accepted();
         }
-        if (ackCount >= replicasConfig.getAck())
-            return accepted();
-
         return gatewayTimeout();
     }
 

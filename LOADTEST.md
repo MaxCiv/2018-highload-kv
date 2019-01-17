@@ -50,7 +50,7 @@ https://overload.yandex.net/153046
 
 ## До оптимизаций
 #### PUT 3/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%201/put_3_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -69,7 +69,7 @@ Transfer/sec:      1.13MB
 ```
 
 #### GET 3/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%201/get_3_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -90,7 +90,7 @@ Transfer/sec:      1.52MB
 ```
 
 #### PUT/GET 3/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%201/put_get_3_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -109,7 +109,7 @@ Transfer/sec:      3.08MB
 ```
 
 #### PUT/GET 2/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%201/put_get_2_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -166,7 +166,7 @@ Transfer/sec:      1.80MB
 ```
 
 #### PUT/GET 3/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%202/put_get_3_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -185,7 +185,7 @@ Transfer/sec:      1.43MB
 ```
 
 #### PUT/GET 2/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%202/put_get_2_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -205,7 +205,7 @@ Transfer/sec:      1.51MB
 
 ## После оптимизации Cache
 #### PUT/GET 3/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%203/put_get_3_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -224,7 +224,7 @@ Transfer/sec:      1.60MB
 ```
 
 #### PUT/GET 2/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%203/put_get_2_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -244,7 +244,7 @@ Transfer/sec:      1.57MB
 
 ## После оптимизации Future
 #### PUT/GET 3/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%204/put_get_3_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
@@ -263,7 +263,7 @@ Transfer/sec:      1.58MB
 ```
 
 #### PUT/GET 2/3
-[Flame Graph by async-profiler]()
+[Flame Graph by async-profiler](https://github.com/MaxCiv/2018-highload-kv/blob/master/Profiling/Stage%204/put_get_2_3_2m.svg)
 ```
 $ wrk --latency -c4 -d2m -s script.lua http://localhost:8080
 Running 2m test @ http://localhost:8080
